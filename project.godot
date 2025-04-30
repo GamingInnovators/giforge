@@ -10,9 +10,14 @@ config_version=5
 
 [application]
 
-config/name="gibedrock"
+config/name="GIBedrock"
+run/main_scene="uid://c14h4lc72r0ah"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[autoload]
+
+GlobalInitializerManager="*res://autoloads/global_initializer_manager.gd"
 
 [rendering]
 
