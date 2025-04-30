@@ -82,6 +82,10 @@ func set_setting(key: String, value: Variant) -> void:
 	print_debug("⚙️ Runtime setting updated (non-persistent): %s -> %s" % [key, str(value)])
 
 
+func get_encryption_key() -> String:
+	return get_setting("encryption_key", "default_unsafe_key_please_change")
+
+
 # --- Private Methods ---
 
 

@@ -89,17 +89,17 @@ var _timers := {
 ##
 ## Must be executed on engine boot via autoload.
 func _ready() -> void:
-	assert(_settings_manager != null, "❌ SettingsManager not found.")
-	assert(_audit_log_manager != null, "❌ AuditLogManager not found.")
-	assert(_device_lock_manager != null, "❌ DeviceLockManager not found.")
-	assert(_backup_manager != null, "❌ BackupManager not found.")
-	assert(_remote_uploader_manager != null, "❌ RemoteUploaderManager not found.")
-	assert(_auto_cleaner_manager != null, "❌ AutoCleanerManager not found.")
-	assert(_core_integrity_checker_manager != null, "❌ CoreIntegrityCheckerManager not found.")
-	assert(_system_bootstrap_manager != null, "❌ SystemBootstrapManager not found.")
+	assert(_settings_manager != null, "❌ [TaskSchedulerManager] Missing SettingsManager singleton.")
+	assert(_audit_log_manager != null, "❌ [TaskSchedulerManager] Missing AuditLogManager singleton.")
+	assert(_device_lock_manager != null, "❌ [TaskSchedulerManager] Missing DeviceLockManager singleton.")
+	assert(_backup_manager != null, "❌ [TaskSchedulerManager] Missing BackupManager singleton.")
+	assert(_remote_uploader_manager != null, "❌ [TaskSchedulerManager] Missing RemoteUploaderManager singleton.")
+	assert(_auto_cleaner_manager != null, "❌ [TaskSchedulerManager] Missing AutoCleanerManager singleton.")
+	assert(_core_integrity_checker_manager != null, "❌ [TaskSchedulerManager] Missing CoreIntegrityCheckerManager singleton.")
+	assert(_system_bootstrap_manager != null, "❌ [TaskSchedulerManager] Missing SystemBootstrapManager singleton.")
 
 	if not _system_bootstrap_manager.is_boot_sequence_complete():
-		push_warning("⏳ Waiting for SystemBootstrapManager to complete sequence.")
+		push_warning("⏳ [TaskSchedulerManager] Waiting for SystemBootstrapManager to complete bootstrap sequence.")
 		await _system_bootstrap_manager.bootstrap_completed
 		_audit_log_manager.append_entry("✅ SystemBootstrap completed. Continuing initialization.")
 
@@ -187,7 +187,7 @@ func _on_timer_timeout(task_name: String) -> void:
 		"integrity_check":
 			_handler_integrity_check()
 		_:
-			push_warning("⚠️ Unknown timer triggered: %s" % task_name)
+			push_warning("⚠️ [TaskSchedulerManager] Unknown timer triggered: %s" % task_name)
 
 
 # --- Task Handlers ---
@@ -259,7 +259,7 @@ func _handler_device_lock_check() -> void:
 ## Logs structured validation outcome and detailed errors if any.
 func _handler_integrity_check() -> void:
 	if not _core_integrity_checker_manager:
-		push_warning("⚠️ CoreIntegrityCheckerManager unavailable.")
+		push_warning("⚠️ [TaskSchedulerManager] CoreIntegrityCheckerManager unavailable. Integrity check aborted.")
 		return
 
 	var result: Dictionary = _core_integrity_checker_manager.validate_all()
@@ -289,7 +289,7 @@ func _handler_integrity_check() -> void:
 ## @param task_name String: Task identifier.
 func _run_task(task_func: Callable, task_name: String) -> void:
 	if not task_func.is_valid():
-		push_warning("⚠️ Invalid task function: %s" % task_name)
+		push_warning("⚠️ [TaskSchedulerManager] Invalid or unbound task function: %s" % task_name)
 		return
 
 	if not _retry_counters.has(task_name):
@@ -465,7 +465,7 @@ func _load_task_intervals_with_fallback() -> Dictionary:
 			_audit_log_manager.append_entry("📄 Loaded fallback scheduler config.")
 			return parsed
 
-	_audit_log_manager.append_entry("⚠️ Failed to load fallback config. Using hardcoded defaults.")
+	_audit_log_manager.append_entry("⚠️ [TaskSchedulerManager] Failed to load fallback config. Using hardcoded intervals.")
 	return DEFAULT_INTERVALS.duplicate()
 
 
@@ -521,10 +521,10 @@ func export_logs_by_date_range(start_date: String, end_date: String, log_type: S
 	assert(start_date != "", "❌ Start date must not be empty.")
 	assert(end_date != "", "❌ End date must not be empty.")
 
-	var filtered_logs := _audit_log_manager.get_logs_between_dates(log_type, start_date, end_date)
+	var filtered_logs: Array[Dictionary] = _audit_log_manager.get_logs_between_dates(log_type, start_date, end_date)
 
 	if filtered_logs.is_empty():
-		_audit_log_manager.append_entry("⚠️ No logs found from %s to %s (type: %s)." % [start_date, end_date, log_type])
+		_audit_log_manager.append_entry("⚠️ [TaskSchedulerManager] No logs found from %s to %s for type '%s'." % [start_date, end_date, log_type])
 		return
 
 	var export_filename := "%s_export_%s_to_%s" % [log_type, start_date, end_date]
@@ -543,7 +543,7 @@ func export_logs_by_date_range(start_date: String, end_date: String, log_type: S
 func verify_all_session_signatures() -> void:
 	var session_logs: Dictionary = _audit_log_manager.load_all_structured_logs("task_scheduler_snapshot")
 	if session_logs.is_empty():
-		_audit_log_manager.append_entry("⚠️ No session snapshots found for validation.")
+		_audit_log_manager.append_entry("⚠️ [TaskSchedulerManager] No task_scheduler_snapshot entries found for signature verification.")
 		return
 
 	var invalid_sessions := []
