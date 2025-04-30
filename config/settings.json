@@ -1,0 +1,49 @@
+{
+	"api_url": "https://api.casino.com/",
+	"upload_url": "https://api.casino.com/upload",
+	"upload_bearer_token": "YOUR-TOKEN-HERE",
+	"upload_interval_sec": 600,
+	"auto_upload_enabled": true,
+	"max_upload_retries": 3,
+
+	"audit_dir": "user://audit_logs/",
+	"audit_log_file": "session_audit.log",
+	"metadata_directory": "user://metadata/",
+	"active_metadata_file": "session_metadata.log",
+	"metadata_xsd_path": "user://schemas/metadata_log.xsd",
+	"receipt_directory": "user://receipts/",
+	"receipt_backup_directory": "user://uploaded/",
+	"manifest_path": "user://manifest/manifest.json",
+	"export_directories": [
+		"user://audit_logs/",
+		"user://metadata/",
+		"user://exports/config/"
+	],
+
+	"rng_state_file": "user://rng_state.dat",
+	"rng_log_file": "user://rng_log.log",
+	"rng_encryption_key": "0123456789ABCDEF",
+	"rng_log_max_size_bytes": 1048576,
+	"rng_log_max_rotations": 5,
+	"rng_log_to_console": false,
+	"rng_enable_logging": true,
+
+	"default_currency": "BRL",
+	"locale": "pt_BR",
+	"session_timeout_sec": 3600,
+
+	"secure_encryption_key": "0123456789ABCDEF",
+	"secure_file_timeout_sec": 5.0,
+	"default_signature_suffix": ".sig",
+	"boundary_string": "----Boundary",
+	"default_retry_count": 2,
+
+	"connectivity_ping_host": "8.8.8.8",
+	"connectivity_ping_port": 53,
+
+	"rng_test_number_of_tests": 100000,
+	"rng_test_export_to_csv": true,
+	"rng_test_csv_output_path": "user://rng_test_results.csv",
+	
+	"otp_required_for_critical_actions": true
+}
