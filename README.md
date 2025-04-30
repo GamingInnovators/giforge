@@ -1,6 +1,6 @@
 # GIBedrock
 
-**GIBedrock** is **Gaming Innovators’ official modular framework** for developing secure, compliant, and scalable casino games using the [Godot Engine](https://godotengine.org/). It is designed for full GLI certification and includes built-in modules for:
+**GIBedrock** is **[Gaming Innovators](https://gaminginnovators.com/)’ official modular framework** for developing secure, compliant, and scalable casino games using the [Godot Engine](https://godotengine.org/). It is designed for full GLI certification and includes built-in modules for:
 
 - 🔐 Encrypted data persistence (AES-256)
 - 📋 Secure audit logs (CSV, JSON, XML)
@@ -62,11 +62,10 @@ your-game-project/
 ├── project.godot
 ├── scripts/
 │   └── core/
-│       └── gibedrock/
-│           ├── autoloads/
-│           ├── utils/
-│           ├── modules/
-│           └── ...
+│       ├── autoloads/
+│       ├── utils/
+│       ├── modules/
+│       └── ...
 ```
 
 ---
