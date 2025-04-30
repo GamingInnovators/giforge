@@ -35,10 +35,10 @@ To manually add the **GIBedrock framework** into an existing Godot project, foll
 cd your-game-project/
 ```
 
-### 2. Add GIBedrock as a submodule under the recommended path (`scripts/core/gibedrock`):
+### 2. Add GIBedrock as a submodule under the recommended path (`scripts/core`):
 
 ```bash
-git submodule add https://github.com/GamingInnovators/gibedrock.git scripts/core/gibedrock
+git submodule add https://github.com/GamingInnovators/gibedrock.git scripts/core
 ```
 
 ### 3. Initialize and sync the submodule:
@@ -76,10 +76,10 @@ your-game-project/
 To update your local copy of GIBedrock with the latest changes from the upstream repository:
 
 ```bash
-cd scripts/core/gibedrock
+cd scripts/core
 git pull origin main
 cd ../../..
-git add scripts/core/gibedrock
+git add scripts/core
 git commit -m "⬆️ Updated GIBedrock to latest version"
 ```
 
@@ -105,10 +105,10 @@ To enable GIBedrock core systems as singletons, add these entries to your `proje
 
 ```ini
 [autoload]
-AuditLogManager="*res://scripts/core/gibedrock/autoloads/audit_log_manager.gd"
-SettingsManager="*res://scripts/core/gibedrock/autoloads/settings_manager.gd"
-SystemBootstrap="*res://scripts/core/gibedrock/autoloads/system_bootstrap_manager.gd"
-OtpManager="*res://scripts/core/gibedrock/autoloads/otp_manager.gd"
+AuditLogManager="*res://scripts/core/autoloads/audit_log_manager.gd"
+SettingsManager="*res://scripts/core/autoloads/settings_manager.gd"
+SystemBootstrap="*res://scripts/core/autoloads/system_bootstrap_manager.gd"
+OtpManager="*res://scripts/core/autoloads/otp_manager.gd"
 ```
 
 > These autoloads follow a strict initialization order to ensure integrity and full compliance.
@@ -169,7 +169,7 @@ To ensure that GIBedrock is not tampered with in cloned or distributed environme
 From the root of your project:
 
 ```bash
-sha256sum -b $(find scripts/core/gibedrock -type f | sort) > gibedrock_checksum.sha256
+sha256sum -b $(find scripts/core -type f | sort) > gibedrock_checksum.sha256
 ```
 
 Compare this against the original `.sha256` file (if provided) or regenerate it in your CI/CD pipeline.
@@ -179,7 +179,7 @@ Compare this against the original `.sha256` file (if provided) or regenerate it 
 For organizations with limited internet access:
 
 ```bash
-tar -czf gibedrock_package.tar.gz scripts/core/gibedrock
+tar -czf gibedrock_package.tar.gz scripts/core
 ```
 
 Then extract it manually on the target project:
