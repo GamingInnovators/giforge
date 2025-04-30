@@ -66,14 +66,6 @@ func _validate_dependencies() -> void:
 	_system_bootstrap.ensure_required_directories()
 
 
-## Initializes the session generator with fallback to local if API fails.
-func _initialize_session() -> void:
-	var use_external := _settings.get_setting("session_use_external", false)
-	var external_url := _settings.get_setting("session_external_url", "")
-	_session_id_generator.init(use_external, external_url)
-	_audit_log.append_entry("🆔 SessionIDGenerator initialized (external=%s)." % str(use_external))
-
-
 # --- Public Methods ---
 
 
