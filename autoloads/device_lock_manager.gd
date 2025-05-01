@@ -6,15 +6,20 @@ class_name DeviceLockManager
 ##
 ## DeviceLockManager.gd (GLI-19 Compliant - Immutable Device Guardian)
 ##
-## Ensures that the game runs only on the original storage device and environment.
-##
-## Responsibilities:
-## - Lock to original hardware/mídia via serial hash
-## - First-time secure registration (bin + signature + hash)
-## - Periodic validation
-## - Audit-safe and tamper detection
+## Ensures execution only on the original storage device by:
+## - Binding to physical serial/device ID
+## - Registering and encrypting the initial lock (bin + sig + hash)
+## - Verifying lock integrity periodically or on demand
+## - Triggering violation signal on mismatch or tampering
 ##
 ## Must be registered as Autoload (singleton).
+
+
+# --- Signals ---
+
+
+## Emitted if the device fingerprint is invalid or mismatched.
+signal device_lock_violation_detected(reason: String)
 
 
 # --- Dependencies ---
@@ -33,7 +38,7 @@ const LOCK_BACKUP := "user://system/device_lock_backup.zip"
 const ENCRYPTION_PASS := "Lock@Game@Media@Secure!"
 
 
-# --- Private Variables ---
+# --- Private State ---
 
 
 var _expected_fingerprint: String = ""
@@ -51,34 +56,38 @@ func _ready() -> void:
 		_validate_device_fingerprint()
 
 
-# --- Public Methods ---
+# --- Public API ---
 
 
-## Public method to trigger device check manually (used by TaskScheduler).
+## Allows external systems (e.g., TaskScheduler) to trigger validation.
 func check_integrity() -> void:
 	_validate_device_fingerprint()
 
+## Exposes current fingerprint for diagnostics.
+func get_current_fingerprint() -> String:
+	return _generate_device_fingerprint()
 
-# --- Private Methods ---
+
+# --- Private Logic ---
 
 
-## Validates required autoloads.
 func _validate_dependencies() -> void:
 	assert(_audit_log_manager != null, "❌ AuditLogManager is required.")
 	assert(_settings_manager != null, "❌ SettingsManager is required.")
 
 
-## Generates a fingerprint string combining serials and hashes.
+## Combines machine ID, OS, hostname and disk serial into fingerprint.
 func _generate_device_fingerprint() -> String:
 	var mac := OS.get_unique_id()
 	var os_name := OS.get_name()
 	var hostname := OS.get_environment("HOSTNAME")
-	var disk_serial := _get_serial_via_udevadm("/dev/sda") # Linux-only fallback
-	var combined := mac + os_name + hostname + disk_serial
+	var disk_serial := _get_serial_via_udevadm("/dev/sda")
 
+	var combined := mac + os_name + hostname + disk_serial
 	return HashUtils.sha256_from_string(combined)
 
 
+## Linux-only disk serial fetch (udevadm).
 func _get_serial_via_udevadm(device_path := "/dev/sda") -> String:
 	if OS.get_name() != "Linux":
 		return "unknown"
@@ -93,47 +102,51 @@ func _get_serial_via_udevadm(device_path := "/dev/sda") -> String:
 	return "unknown"
 
 
-## Registers and signs the current device fingerprint.
+## Registers fingerprint securely.
 func _register_device_fingerprint() -> void:
 	_expected_fingerprint = _generate_device_fingerprint()
 
 	var file := FileAccess.open_encrypted_with_pass(LOCK_FILE_PATH, FileAccess.WRITE, ENCRYPTION_PASS)
-	assert(file != null, "❌ Failed to create encrypted lock file.")
+	assert(file != null, "❌ Failed to create encrypted device lock file.")
 
-	file.store_var({ "fingerprint": _expected_fingerprint, "created": Time.get_datetime_string_from_system(true) })
+	file.store_var({
+		"fingerprint": _expected_fingerprint,
+		"created": Time.get_datetime_string_from_system(true)
+	})
 	file.close()
 
 	IntegrityChecker.save_file_signature(LOCK_FILE_PATH)
 	_create_lock_backup()
 
-	_audit_log_manager.append_entry("🔐 DeviceLock registered successfully.")
+	_audit_log_manager.append_entry("🔐 DeviceLock registered and secured.")
 
 
-## Validates the device fingerprint and halts the game if it was cloned.
+## Validates fingerprint and halts if tampering is detected.
 func _validate_device_fingerprint() -> void:
 	if not IntegrityChecker.validate_file_signature(LOCK_FILE_PATH):
-		_audit_log_manager.append_entry("❌ DeviceLock signature mismatch.")
-		push_error("🔒 Critical: DeviceLock signature invalid.")
+		_audit_log_manager.append_entry("❌ DeviceLock signature invalid.")
+		emit_signal("device_lock_violation_detected", "Signature mismatch")
 		get_tree().quit()
+		return
 
 	var file := FileAccess.open_encrypted_with_pass(LOCK_FILE_PATH, FileAccess.READ, ENCRYPTION_PASS)
-	assert(file != null, "❌ Failed to read encrypted lock file.")
+	assert(file != null, "❌ Failed to read encrypted device lock.")
 
 	var data: Dictionary = file.get_var()
 	file.close()
 
 	_expected_fingerprint = data.get("fingerprint", "")
-	var current_fingerprint := _generate_device_fingerprint()
+	var current := _generate_device_fingerprint()
 
-	if current_fingerprint != _expected_fingerprint:
-		_audit_log_manager.append_entry("⛔ DeviceLock mismatch detected. Execution halted.")
-		push_error("🔒 Device environment has changed. Game terminated.")
+	if current != _expected_fingerprint:
+		_audit_log_manager.append_entry("⛔ DeviceLock mismatch. System halt.")
+		emit_signal("device_lock_violation_detected", "Fingerprint mismatch")
 		get_tree().quit()
+	else:
+		_audit_log_manager.append_entry("✅ DeviceLock validated successfully.")
 
-	_audit_log_manager.append_entry("✅ DeviceLock integrity verified.")
 
-
-## Creates a backup ZIP of the lock file.
+## Creates ZIP backup of lock file and signs it.
 func _create_lock_backup() -> void:
 	var zip := ZIPPacker.new()
 
@@ -143,4 +156,4 @@ func _create_lock_backup() -> void:
 		zip.close()
 
 		IntegrityChecker.save_file_signature(LOCK_BACKUP)
-		_audit_log_manager.append_entry("🛡️ DeviceLock backup created and signed.")
+		_audit_log_manager.append_entry("📦 DeviceLock backup created and signed.")
